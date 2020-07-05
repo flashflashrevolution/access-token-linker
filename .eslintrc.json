@@ -2,8 +2,7 @@
   "parser": "@typescript-eslint/parser",
   "parserOptions": {
     "project": [
-      "./tsconfig.json",
-      "./examples/redirect-flow/tsconfig.json"
+      "./tsconfig.json"
     ]
   },
   "plugins": [
@@ -35,7 +34,7 @@
       "always"
     ],
     "brace-style": [
-      "fix",
+      "error",
       "allman"
     ]
   }
