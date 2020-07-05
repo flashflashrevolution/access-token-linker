@@ -24,6 +24,7 @@
     "eslint-plugin-prettier": "^3.1.4",
     "express": "^4.17.1",
     "form-urlencoded": "^4.1.4",
+    "patreon-ts": "file:../../../zageron/patreonts",
     "pg": "^8.2.1",
     "reflect-metadata": "^0.1.13",
     "request": "^2.88.2",

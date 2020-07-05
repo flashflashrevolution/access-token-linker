@@ -23,7 +23,7 @@ import
 
 import { format as formatUrl } from 'url';
 
-import { PatreonRequest, Endpoints, Schemas } from "../../../dist/patreon";
+import { PatreonRequest, Endpoints, Schemas } from "patreon-ts";
 import { ParsedUrlQueryInput } from 'querystring';
 
 dotenv.config({ path: "./.env" });

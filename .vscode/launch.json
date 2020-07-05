@@ -6,7 +6,7 @@
             "request": "launch",
             "cwd": "${workspaceRoot}",
             "args": [
-                "src/patreon.ts"
+                "src/link.ts"
             ],
             "runtimeArgs": [
                 "--nolazy",
