@@ -30,7 +30,6 @@
     "forceConsistentCasingInFileNames": true
   },
   "exclude": [
-    "./examples/**",
     "./dist/**"
   ]
 }
