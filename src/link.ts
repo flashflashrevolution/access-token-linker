@@ -1,15 +1,16 @@
-import express = require('express');
+/* eslint-disable @typescript-eslint/no-unsafe-call */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 
-import * as dotenv from 'dotenv';
+import { ImportEnvironmentVariables } from "./Config";
+ImportEnvironmentVariables();
 
-import
-{
-    NextFunction,
-    Request,
-    Response
-} from 'express-serve-static-core';
-
+import 'reflect-metadata';
+import { NextFunction, Request, Response } from 'express-serve-static-core';
 import { AddressInfo } from 'net';
+import { Endpoints, PatreonRequest, Schemas } from "patreon-ts";
+import { ParsedUrlQueryInput } from 'querystring';
+import { Guid } from "guid-typescript";
+import { UserIdValidatorMiddleware } from "./UserIdValidator";
 
 import
 {
@@ -23,27 +24,27 @@ import
 
 import { format as formatUrl } from 'url';
 
-import { PatreonRequest, Endpoints, Schemas } from "patreon-ts";
-import { ParsedUrlQueryInput } from 'querystring';
-
-dotenv.config({ path: "./.env" });
+import express = require('express');
+import cookieParser = require('cookie-parser');
+import * as Database from "./Database";
+import { GetCookies, Cookies } from "./Cookies";
+import { exit } from "process";
+import { PatreonLink } from "./entity/PatreonLink";
 
 const CLIENT_ID: string = process.env.PATREON_CLIENT_ID as string;
 const PATREON_HOST: string = "https://www.patreon.com";
 const PATREON_TOKEN_PATH: string = "/api/oauth2/token";
 const PATREON_AUTHORIZE_PATH: string = "/oauth2/authorize";
 
-
 const authorizeRedirectUri: string = formatUrl({
     protocol: "http",
-    host: "localhost:8081",
+    host: "testing.flashflashrevolution.com:8081",
     pathname: "/oauth/redirect",
 });
 
-const stateCheck: string = "chill";
 const scopes: string = "identity campaigns identity.memberships campaigns.members";
 
-let accessTokenStore: AccessToken;
+const activeRequestMap = new Map<string, number>();
 
 const credentials: ModuleOptions = {
     client:
@@ -59,20 +60,22 @@ const credentials: ModuleOptions = {
     }
 };
 
-// Build the OAuth2 client.
 const client: OAuthClient<"patreon"> = create(credentials);
 
-export async function ShowPatronInformation(_req: Request, res: Response): Promise<void>
+export async function DisplayConditionalLandingPage(req: Request, res: Response): Promise<void>
 {
-    if (accessTokenStore)
+    const cookies:Cookies = GetCookies(req.cookies);
+    await Database.ReadLinkData(parseInt(cookies.user_id))
+    .then((links: PatreonLink[]): Promise<string> =>
     {
+        if (links.length == 0)
+        {
+            res.redirect("/patreon");
+        }
+
         const UserQueryObject: Schemas.User = new Schemas.User(
-            {
-                attributes:
-                {
-                    about: Schemas.user_constants.attributes?.about,
-                },
-            });
+            { attributes: { about: Schemas.user_constants.attributes.first_name } }
+        );
 
         const endpointQuery: ParsedUrlQueryInput = Endpoints.BuildEndpointQuery(UserQueryObject);
 
@@ -80,44 +83,40 @@ export async function ShowPatronInformation(_req: Request, res: Response): Promi
             Endpoints.SimpleEndpoints.Identity,
             endpointQuery);
 
-        const result: string = await PatreonRequest(accessTokenStore, query);
-        const obj: any = JSON.parse(result);
-        res.send(`
-        <html>
-        <head>
-        <style type="text/css">
-        code { background-color: gray; color: blue; }
-        </style>
-        </head>
-        <body>
-        <pre>${ JSON.stringify(obj, null, '  ')}</pre>
-        </body>
-        </html>`);
-        console.log(JSON.stringify(obj, null, '  '));
-    }
-    else
+        const result: Token = JSON.parse(links[0].access_token);
+        const accessToken: AccessToken = client.accessToken.create(result);
+        return PatreonRequest(accessToken, query);
+    })
+    .then((result: string) =>
     {
-        res.send(`<a href="/patreon">Link with Patreon</a>`);
-    }
+        const UserResultObject: Schemas.User = new Schemas.User(
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+            JSON.parse(result).data
+        );
+
+        res.send(`<p>Hey ${UserResultObject.attributes?.first_name} you're all set!</p>
+        <p><a href="http://www.flashflashrevolution.com/">Go back to FFR!</a></p>`);
+    })
 }
 
-// Patreon OAuth2 Flow Entrypoint
-export function PatreonAuthorizeMiddleware(_req: Request, res: Response): void
+export function RequestAuthorizationFromPatreon(req: Request, res: Response): void
 {
-    // Build AuthorizationUrl
+    // Get userid from cookie. (If we got here, we know it exists.)
+    const cookies: Cookies = GetCookies(req.cookies);
+    const state: Guid = Guid.create();
+    activeRequestMap.set(state.toString(), parseInt(cookies.user_id));
+
     const authorizationUri: string = client.authorizationCode.authorizeURL(
         {
             redirect_uri: authorizeRedirectUri,
             scope: scopes,
-            state: stateCheck,
+            state: state.toString(),
         });
 
-    // Redirect user browser to Patreon's Auth url.
     res.redirect(authorizationUri);
 }
 
-// Patreon Redirect Flow Entrypoint
-export async function PatreonRedirectMiddleware(req: Request, res: Response, next: NextFunction): Promise<void>
+export async function ExtractAccessTokenFromPatreon(req: Request, res: Response, next: NextFunction): Promise<void>
 {
     let tokenConfig: AuthorizationTokenConfig;
     let stateVar: string;
@@ -137,34 +136,63 @@ export async function PatreonRedirectMiddleware(req: Request, res: Response, nex
         stateVar = state as string;
     }
 
-    if (stateCheck != stateVar)
-    {
-        res.redirect("/");
-    }
-
-    // Save the access token
     try
     {
         const result: Token = await client.authorizationCode.getToken(tokenConfig);
-        accessTokenStore = client.accessToken.create(result);
-        console.log(accessTokenStore);
+        const accessToken: AccessToken = client.accessToken.create(result);
+        let ffrUserId: number = -1;
+        if (activeRequestMap.has(stateVar))
+        {
+            ffrUserId = activeRequestMap.get(stateVar) as number;
+            activeRequestMap.delete(stateVar);
+
+            await Database.WriteLinkData(accessToken, ffrUserId)
+            .catch((error) =>
+            {
+                console.log(error);
+                next(error);
+            });
+
+            next();
+        }
+        else
+        {
+            next();
+        }
+
         res.redirect("/");
     }
     catch (error)
     {
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-        console.log('Access Token Error', error.message);
-        next(error);
+        return next(error);
     }
 }
 
 const PORT: number = 8081;
 const app: express.Express = express();
-const server = app.listen(PORT, () =>
+
+// Incoming redirect from Patreon.
+app.get("/oauth/redirect", ExtractAccessTokenFromPatreon);
+
+app.use(cookieParser());
+app.use(UserIdValidatorMiddleware());
+
+// Incoming redirect from FFR.
+app.get("/patreon", RequestAuthorizationFromPatreon);
+
+// Homepage test.
+app.get("/", DisplayConditionalLandingPage);
+
+// Initialize and Start Listening
+if (Database.Initialize())
 {
-    const port: AddressInfo = server.address() as AddressInfo;
-    console.log(`Listening on http://localhost:${port.port}`);
-});
-app.get("/", ShowPatronInformation);
-app.get("/patreon", PatreonAuthorizeMiddleware);
-app.get("/oauth/redirect", PatreonRedirectMiddleware);
+    const server = app.listen(PORT, () =>
+    {
+        const port: AddressInfo = server.address() as AddressInfo;
+        console.log(`Listening on http://testing.flashflashrevolution.com:${port.port}`);
+    });
+}
+else
+{
+    exit(1);
+}

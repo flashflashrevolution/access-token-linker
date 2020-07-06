@@ -18,6 +18,7 @@
             },
             "sourceMaps": true,
             "internalConsoleOptions": "openOnSessionStart",
+            "preLaunchTask": "tsc: build - tsconfig.json"
         },
         {
             "name": "Debug Current Library File",

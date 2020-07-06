@@ -22,13 +22,9 @@
         "allowNullish": true
       }
     ],
+    "max-len": ["error", { "code": 120, "tabWidth": 4 }],
     "curly": "error",
-    "object-curly-newline": [
-      "error",
-      {
-        "minProperties": 2
-      }
-    ],
+    "object-curly-newline": "off",
     "object-curly-spacing": [
       "error",
       "always"
