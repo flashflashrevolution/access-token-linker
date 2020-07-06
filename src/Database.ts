@@ -57,8 +57,6 @@ function Initialize(): boolean
         username: DB_PATREON_USER,
         password: DB_PATREON_PASS,
         database: DB_PATREON,
-        logging: "all",
-        synchronize: true,
         entities: [ "src/entity/**/*.ts" ]
     })
     .catch(error =>

@@ -7,3 +7,19 @@
 ```bash
 docker build -t flashflashrevolution/node-web-app .
 ```
+
+## Generating Migrations
+
+1. Create ormconfig.production and fill out database credentials. (Do not submit.)
+
+2. > ```bash
+   > npm run typeorm migration:generate -- --name initialize --connection patreon --config ormconfig.production
+   > ```
+
+3. Commit the migration.
+
+## Running Migrations
+
+```bash
+npm run typeorm migration:run -- --connection patreon --config ormconfig.production
+```

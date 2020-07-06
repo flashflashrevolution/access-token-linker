@@ -25,7 +25,7 @@ function UserIdValidatorMiddleware(): RequestHandler
     {
         const cookies: Cookies = GetCookies(req.cookies);
 
-        if (!cookies || cookies.user_id)
+        if (!cookies || !cookies.user_id)
         {
             return next("You are not authenticated.");
         }
