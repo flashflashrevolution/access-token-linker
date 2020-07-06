@@ -4,6 +4,7 @@
    "description": "Service which links FFR and Patreon accounts together.",
    "main": "dist/link.js",
    "types": "dist/link.d.ts",
+   "private": true,
    "prepublish": "tsc",
    "scripts": {
       "start": "ts-node src/index.ts",
