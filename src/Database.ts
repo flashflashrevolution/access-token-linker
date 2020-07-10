@@ -18,6 +18,7 @@ function BindUserData(accessToken:AccessToken, ffrUserId: number): PatreonLink
     link.access_token = accessToken.token.access_token;
     link.access_token = JSON.stringify(accessToken.token);
     link.ffr_userid = ffrUserId;
+    link.expires_at = accessToken.token.expires_at;
     return link;
 }
 

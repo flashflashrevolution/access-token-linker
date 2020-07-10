@@ -30,4 +30,7 @@ export class PatreonLink
             width: 10,
         })
     ffr_userid!: number;
+
+    @Column()
+    expires_at!: Date;
 }
