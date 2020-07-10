@@ -15,19 +15,19 @@ export class PatreonLink
 
     @Column(
         {
+            charset: "utf8",
             default: String.Empty,
             type: "text",
-            charset: "utf8"
         })
     access_token!: string;
 
     @Column(
         {
+            default: 0,
             type: "int",
+            unique: true,
             unsigned: true,
             width: 10,
-            default: 0,
-            unique: true
         })
     ffr_userid!: number;
 }
