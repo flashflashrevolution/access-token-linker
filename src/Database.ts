@@ -57,13 +57,13 @@ function Initialize(): boolean
         username: DB_PATREON_USER,
         password: DB_PATREON_PASS,
         database: DB_PATREON,
-        entities: [ "src/entity/**/*.ts" ]
+        entities: ["src/entity/**/*.ts"]
     })
-    .catch(error =>
-    {
-        console.error(error);
-        success = false;
-    });
+        .catch(error =>
+        {
+            console.error(error);
+            success = false;
+        });
 
     return success;
 }
