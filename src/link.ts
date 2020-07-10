@@ -5,7 +5,7 @@ import { ImportEnvironmentVariables } from "./Config";
 ImportEnvironmentVariables();
 
 import 'reflect-metadata';
-import { NextFunction, Request, Response } from 'express-serve-static-core';
+import { Request, Response } from 'express-serve-static-core';
 import { AddressInfo } from 'net';
 import { Endpoints, PatreonRequest, Schemas } from "patreon-ts";
 import { ParsedUrlQueryInput } from 'querystring';
@@ -97,6 +97,11 @@ export async function DisplayConditionalLandingPage(req: Request, res: Response)
         res.send(`<p>Hey ${UserResultObject.attributes?.first_name} you're all set!</p>
         <p><a href="http://www.flashflashrevolution.com/">Go back to FFR!</a></p>`);
     })
+    .catch((error) =>
+    {
+        console.log(error);
+        res.redirect("http://www.flashflashrevolution.com/");
+    });
 }
 
 export function RequestAuthorizationFromPatreon(req: Request, res: Response): void
@@ -116,7 +121,7 @@ export function RequestAuthorizationFromPatreon(req: Request, res: Response): vo
     res.redirect(authorizationUri);
 }
 
-export async function ExtractAccessTokenFromPatreon(req: Request, res: Response, next: NextFunction): Promise<void>
+export async function ExtractAccessTokenFromPatreon(req: Request, res: Response): Promise<void>
 {
     let tokenConfig: AuthorizationTokenConfig;
     let stateVar: string;
@@ -150,21 +155,16 @@ export async function ExtractAccessTokenFromPatreon(req: Request, res: Response,
             .catch((error) =>
             {
                 console.log(error);
-                next(error);
             });
-
-            next();
         }
-        else
-        {
-            next();
-        }
-
-        res.redirect("/");
     }
     catch (error)
     {
-        return next(error);
+        console.log(error);
+    }
+    finally
+    {
+        res.redirect("/");
     }
 }
 
