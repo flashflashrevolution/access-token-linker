@@ -30,6 +30,7 @@ import * as Database from "./Database";
 import { GetCookies, Cookies } from "./Cookies";
 import { exit } from "process";
 import { PatreonLink } from "./entity/PatreonLink";
+import * as WebApp from "./WebApp";
 
 const CLIENT_ID: string = process.env.PATREON_CLIENT_ID as string;
 const PATREON_HOST: string = "https://www.patreon.com";
@@ -183,6 +184,8 @@ app.get("/patreon", RequestAuthorizationFromPatreon);
 // Homepage test.
 app.get("/", DisplayConditionalLandingPage);
 
+app.use(WebApp.HandlerError)
+app.use(WebApp.Handler404)
 // Initialize and Start Listening
 if (Database.Initialize())
 {
