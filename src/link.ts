@@ -21,14 +21,14 @@ const PATREON_HOST: string = "https://www.patreon.com";
 const PATREON_TOKEN_PATH: string = "/api/oauth2/token";
 const PATREON_AUTHORIZE_PATH: string = "/oauth2/authorize";
 const FFR_HOST: string = process.env.LINK_REDIR_HOST as string;
-const FFR_REDIR_PATH: string = process.env.LINK_REDIR_HOST as string;
+const FFR_REDIR_PATH: string = process.env.LINK_REDIR_PATH as string;
 
 const redirAuthorizeUrl: Url.URL = new Url.URL("/oauth/redirect", "http://testing.flashflashrevolution.com:8081");
-const redirToFFRUrl: Url.URL = new Url.URL(FFR_REDIR_PATH, FFR_HOST);
 
 const scopes: string = "identity campaigns identity.memberships campaigns.members";
 
-const activeRequestMap = new Map<string, number>();
+const activeRequestMap: Map<string, number> = new Map<string, number>();
+const activeRequestExpirationMap: Map<string, Date> = new Map<string, Date>();
 
 const credentials: OAuth.ModuleOptions = {
     client:
@@ -51,7 +51,13 @@ export function RequestAuthorizationFromPatreon(req: Express.Request, res: Expre
     // Get userid from cookie. (If we got here, we know it exists.)
     const cookies: Cookies.Cookies = Cookies.GetCookies(req.cookies);
     const state: Guid = Guid.create();
-    activeRequestMap.set(state.toString(), parseInt(cookies.user_id));
+
+    const expieryDate: Date = new Date(Date.now());
+    expieryDate.setMinutes(expieryDate.getMinutes() + 5);
+
+    const stateString = state.toString();
+    activeRequestMap.set(stateString, parseInt(cookies.user_id));
+    activeRequestExpirationMap.set(stateString, expieryDate);
 
     const authorizationUri: string = client.authorizationCode.authorizeURL(
         {
@@ -63,8 +69,18 @@ export function RequestAuthorizationFromPatreon(req: Express.Request, res: Expre
     res.redirect(authorizationUri);
 }
 
-export async function ExtractAccessTokenFromPatreon(req: Express.Request, res: Express.Response): Promise<void>
+export async function ExtractAccessTokenFromPatreon(
+    req: Express.Request,
+    res: Express.Response): Promise<void>
 {
+    const redirToFFRUrlWithResult: Url.URL = new Url.URL(FFR_REDIR_PATH, FFR_HOST);
+
+    if (Object.keys(req.query).length <= 0)
+    {
+        redirToFFRUrlWithResult.search = "result=deny";
+        res.redirect(redirToFFRUrlWithResult.href);
+    }
+
     let tokenConfig: OAuth.AuthorizationTokenConfig;
     let stateVar: string;
     {
@@ -92,11 +108,25 @@ export async function ExtractAccessTokenFromPatreon(req: Express.Request, res: E
         {
             ffrUserId = activeRequestMap.get(stateVar) as number;
             activeRequestMap.delete(stateVar);
+            activeRequestExpirationMap.delete(stateVar);
 
             await LinkSpec.WriteLinkData(accessToken, ffrUserId)
+                .then((result: LinkSpec.Result) =>
+                {
+                    switch (result)
+                    {
+                        case LinkSpec.Result.SUCCESS:
+                            redirToFFRUrlWithResult.search = "result=success";
+                            break;
+                        case LinkSpec.Result.DUPLICATE:
+                            redirToFFRUrlWithResult.search = "result=exists";
+                            break;
+                    }
+                })
                 .catch((error) =>
                 {
                     console.log(error);
+                    redirToFFRUrlWithResult.search = "result=fail";
                 });
         }
     }
@@ -104,10 +134,8 @@ export async function ExtractAccessTokenFromPatreon(req: Express.Request, res: E
     {
         console.log(error);
     }
-    finally
-    {
-        res.redirect(redirToFFRUrl.href);
-    }
+
+    res.redirect(redirToFFRUrlWithResult.href);
 }
 
 const app: Express.Express = Express();
@@ -132,6 +160,31 @@ if (Database.Initialize())
         const port: AddressInfo = server.address() as AddressInfo;
         console.log(`Listening on http://testing.flashflashrevolution.com:${port.port}`);
     });
+
+    setInterval(() =>
+    {
+        const toRemove: string[] = [];
+        const timeNow: number = Date.now();
+        for (const expiery of activeRequestExpirationMap)
+        {
+            if (expiery[1].valueOf() > timeNow)
+            {
+                toRemove.push(expiery[0]);
+            }
+        }
+
+        if (toRemove.length > 0)
+        {
+            console.log(`${toRemove.length} link requests expired.`);
+        }
+
+        for (const entry of toRemove)
+        {
+            activeRequestMap.delete(entry);
+            activeRequestExpirationMap.delete(entry);
+        }
+    },
+        300000);
 }
 else
 {

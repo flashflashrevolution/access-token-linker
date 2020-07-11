@@ -8,7 +8,13 @@ import { Connection, getConnection } from 'typeorm';
 
 const DB_PATREON: string = process.env.DB_PATREON as string;
 
-function BindUserData(accessToken:AccessToken, ffrUserId: number): PatreonLink
+enum Result
+{
+    SUCCESS,
+    DUPLICATE,
+}
+
+function BindUserData(accessToken: AccessToken, ffrUserId: number): PatreonLink
 {
     const link: PatreonLink = new PatreonLink();
     link.access_token = accessToken.token.access_token;
@@ -18,21 +24,29 @@ function BindUserData(accessToken:AccessToken, ffrUserId: number): PatreonLink
     return link;
 }
 
-async function WriteLinkData(accessToken: AccessToken, ffrUserId: number): Promise<void>
+async function WriteLinkData(accessToken: AccessToken, ffrUserId: number): Promise<Result>
 {
+    let result: Result = Result.SUCCESS;
+
     const link: PatreonLink = BindUserData(accessToken, ffrUserId);
 
     const connection: Connection = getConnection(DB_PATREON);
     await connection.manager.save(link)
         .catch((error) =>
         {
-            switch (error.code)
+            switch (error.errno)
             {
                 case MysqlErrorCodes.ER_DUP_ENTRY:
                     console.log(`PatreonLink with ffr_userid ${link.ffr_userid} already exists.`);
+                    result = Result.DUPLICATE;
+                    return Promise.resolve();
                     break;
+                default:
+                    return Promise.reject(error);
             }
         });
+    
+    return result;
 }
 
 async function ReadLinkData(ffrUserId: number): Promise<PatreonLink[]>
@@ -42,4 +56,4 @@ async function ReadLinkData(ffrUserId: number): Promise<PatreonLink[]>
         .find({ where: { ffr_userid: ffrUserId } });
 }
 
-export { ReadLinkData, WriteLinkData };
+export { ReadLinkData, WriteLinkData, Result };
