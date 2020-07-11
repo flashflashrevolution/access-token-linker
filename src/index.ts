@@ -11,10 +11,10 @@ import * as Process from "process";
 import * as Url from 'url';
 
 import * as Cookies from "./Cookies";
-import * as Database from "./Database";
-import * as LinkSpec from "./tableManipulators/LinkSpec";
+import { Specs, Initialize, Entities } from "database-entities";
 import * as UserIdValidator from "./UserIdValidator";
 import * as WebApp from "./WebApp";
+import { ConnectionOptions } from 'typeorm';
 
 const CLIENT_ID: string = process.env.PATREON_CLIENT_ID as string;
 const PATREON_HOST: string = "https://www.patreon.com";
@@ -79,6 +79,7 @@ export async function ExtractAccessTokenFromPatreon(
     {
         redirToFFRUrlWithResult.search = "result=deny";
         res.redirect(redirToFFRUrlWithResult.href);
+        return Promise.resolve();
     }
 
     let tokenConfig: OAuth.AuthorizationTokenConfig;
@@ -110,15 +111,15 @@ export async function ExtractAccessTokenFromPatreon(
             activeRequestMap.delete(stateVar);
             activeRequestExpirationMap.delete(stateVar);
 
-            await LinkSpec.WriteLinkData(accessToken, ffrUserId)
-                .then((result: LinkSpec.Result) =>
+            await Specs.Link.WriteLinkData(accessToken, ffrUserId)
+                .then((result: Specs.Link.Result) =>
                 {
                     switch (result)
                     {
-                        case LinkSpec.Result.SUCCESS:
+                        case Specs.Link.Result.SUCCESS:
                             redirToFFRUrlWithResult.search = "result=success";
                             break;
-                        case LinkSpec.Result.DUPLICATE:
+                        case Specs.Link.Result.DUPLICATE:
                             redirToFFRUrlWithResult.search = "result=exists";
                             break;
                     }
@@ -152,7 +153,24 @@ app.get("/", RequestAuthorizationFromPatreon);
 app.use(WebApp.HandlerError);
 app.use(WebApp.Handler404);
 
-if (Database.Initialize())
+const DB_HOST: string = process.env.DB_HOST as string;
+const DB_PATREON: string = process.env.DB_PATREON as string;
+const DB_PATREON_USER: string = process.env.DB_PATREON_USER as string;
+const DB_PATREON_PASS: string = process.env.DB_PATREON_PASS as string;
+
+const connectionOptions: ConnectionOptions =
+{
+    name: DB_PATREON,
+    type: "mysql",
+    host: DB_HOST,
+    port: 3306,
+    username: DB_PATREON_USER,
+    password: DB_PATREON_PASS,
+    database: DB_PATREON,
+    entities: [Entities.PatreonLink]
+};
+
+if (Initialize(connectionOptions))
 {
     const PORT: number = 8081;
     const server = app.listen(PORT, () =>
