@@ -1,6 +1,6 @@
 {
    "name": "patreon-link",
-   "version": "1.0.0",
+   "version": "1.1.0",
    "description": "Service which links FFR and Patreon accounts together.",
    "main": "dist/link.js",
    "types": "dist/link.d.ts",
