@@ -1,14 +1,26 @@
-import * as Express from "express";
+/* eslint-disable @typescript-eslint/no-unused-vars */
 
-interface ResponseError extends Error
+import Express = require('express');
+
+class HttpException extends Error
 {
-    status?: number;
+    status: number;
+    message: string;
+
+    constructor(status: number, message: string)
+    {
+        super(message);
+
+        this.status = status;
+        this.message = message;
+    }
 }
 
 function HandlerError(
-    error: ResponseError,
+    error: HttpException,
     _req: Express.Request,
-    res: Express.Response): void
+    res: Express.Response,
+    _next: Express.NextFunction): void
 {
     res.status(error.status || 500);
     res.send({ error: error.message });
@@ -22,4 +34,4 @@ function Handler404(
     res.send({ error: "Unsupported route." });
 }
 
-export { HandlerError, Handler404 };
+export { HandlerError, Handler404, HttpException };

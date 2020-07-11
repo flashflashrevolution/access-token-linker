@@ -1,9 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { NextFunction, Request, Response, RequestHandler } from "express";
-import { Cookies, GetCookies } from "./Cookies";
+import Express = require('express');
+import * as Cookies from "./Cookies";
+import * as WebApp from "./WebApp";
 
 import sha1 = require("sha1");
 
@@ -19,15 +16,15 @@ function ValidateHashedUseridPair(userid: string, hashedUserid: string): boolean
     return HashUserid(userid) === hashedUserid;
 }
 
-function UserIdValidatorMiddleware(): RequestHandler
+function Middleware(): Express.RequestHandler
 {
-    return function UserIdValidator(req: Request, _res: Response, next: NextFunction)
+    return function UserIdValidator(req: Express.Request, _res: Express.Response, next: Express.NextFunction)
     {
-        const cookies: Cookies = GetCookies(req.cookies);
+        const cookies: Cookies.Cookies = Cookies.GetCookies(req.cookies);
 
         if (!cookies || !cookies.user_id)
         {
-            return next("You are not authenticated.");
+            return next(new WebApp.HttpException(401, "You are not authenticated."));
         }
 
         if (ValidateHashedUseridPair(cookies.user_id, cookies.user_id_verify))
@@ -41,4 +38,4 @@ function UserIdValidatorMiddleware(): RequestHandler
     };
 }
 
-export { UserIdValidatorMiddleware };
+export { Middleware };
