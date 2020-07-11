@@ -1,9 +1,9 @@
 {
-   "name": "patreon-link",
+   "name": "access-token-linker",
    "version": "1.1.0",
-   "description": "Service which links FFR and Patreon accounts together.",
-   "main": "dist/link.js",
-   "types": "dist/link.d.ts",
+   "description": "Service which links FFR accounts to API access tokens.",
+   "main": "dist/index.js",
+   "types": "dist/index.d.ts",
    "private": true,
    "prepublish": "tsc",
    "scripts": {
@@ -12,14 +12,14 @@
    },
    "repository": {
       "type": "git",
-      "url": "git+ssh://git@github.com/flashflashrevolution/patreon-link.git"
+      "url": "git+ssh://git@github.com/flashflashrevolution/access-token-linker.git"
    },
    "author": "Zageron",
    "license": "AGPL-3.0-only",
    "bugs": {
-      "url": "https://github.com/flashflashrevolution/patreon-link/issues"
+      "url": "https://github.com/flashflashrevolution/access-token-linker/issues"
    },
-   "homepage": "https://github.com/flashflashrevolution/patreon-link#readme",
+   "homepage": "https://github.com/flashflashrevolution/access-token-linker#readme",
    "dependencies": {
       "cookie-parser": "^1.4.5",
       "dotenv": "^8.2.0",

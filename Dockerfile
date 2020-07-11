@@ -18,4 +18,4 @@ COPY . .
 
 EXPOSE 8081
 
-CMD [ "node", "dist/link.js" ]
+CMD [ "node", "dist/index.js" ]
