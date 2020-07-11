@@ -44,7 +44,7 @@
       "@types/cookie-parser": "^1.4.2",
       "@types/express": "^4.17.7",
       "@types/form-urlencoded": "^2.0.1",
-      "@types/node": "^14.0.20",
+      "@types/node": "^14.0.22",
       "@types/node-cron": "^2.0.3",
       "@types/request": "^2.48.5",
       "@types/request-promise-native": "^1.0.17",
