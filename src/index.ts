@@ -11,7 +11,7 @@ import * as Process from "process";
 import * as Url from 'url';
 
 import * as Cookies from "./Cookies";
-import { Specs, Initialize, Entities } from "database-entities";
+import { Specs, Initialize, Entities } from "@flashflashrevolution/database-entities"
 import * as UserIdValidator from "./UserIdValidator";
 import * as WebApp from "./WebApp";
 import { ConnectionOptions } from 'typeorm';
