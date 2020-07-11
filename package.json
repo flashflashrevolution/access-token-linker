@@ -5,7 +5,7 @@
    "main": "dist/index.js",
    "types": "dist/index.d.ts",
    "private": true,
-   "prepublish": "tsc",
+   "prepublish": "./node_modules/.bin/tsc",
    "scripts": {
       "start": "ts-node src/index.ts",
       "typeorm": "node --require ts-node/register ./node_modules/typeorm/cli.js"
