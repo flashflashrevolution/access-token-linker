@@ -6,17 +6,17 @@ import Express = require('express');
 import { Guid } from "guid-typescript";
 import { AddressInfo } from 'net';
 import "reflect-metadata";
+import * as PatreonTS from 'patreon-ts';
 import * as OAuth from 'simple-oauth2';
 import * as Process from "process";
 import * as Url from 'url';
 
 import * as Cookies from "./Cookies";
-import { Specs, Initialize, Entities } from "@flashflashrevolution/database-entities"
+import { Specs, Initialize, Entities } from "@flashflashrevolution/database-entities";
 import * as UserIdValidator from "./UserIdValidator";
 import * as WebApp from "./WebApp";
-import { ConnectionOptions } from 'typeorm';
+import * as TypeORM from 'typeorm';
 
-const CLIENT_ID: string = process.env.PATREON_CLIENT_ID as string;
 const PATREON_HOST: string = "https://www.patreon.com";
 const PATREON_TOKEN_PATH: string = "/api/oauth2/token";
 const PATREON_AUTHORIZE_PATH: string = "/oauth2/authorize";
@@ -33,7 +33,7 @@ const activeRequestExpirationMap: Map<string, Date> = new Map<string, Date>();
 const credentials: OAuth.ModuleOptions = {
     client:
     {
-        id: CLIENT_ID,
+        id: process.env.PATREON_CLIENT_ID as string,
         secret: process.env.PATREON_CLIENT_SECRET as string
     },
     auth:
@@ -44,7 +44,7 @@ const credentials: OAuth.ModuleOptions = {
     }
 };
 
-const client: OAuth.OAuthClient<"patreon"> = OAuth.create(credentials);
+const client: OAuth.AuthorizationCode<"patreon"> = new OAuth.AuthorizationCode(credentials);
 
 export function RequestAuthorizationFromPatreon(req: Express.Request, res: Express.Response): void
 {
@@ -59,7 +59,7 @@ export function RequestAuthorizationFromPatreon(req: Express.Request, res: Expre
     activeRequestMap.set(stateString, parseInt(cookies.user_id));
     activeRequestExpirationMap.set(stateString, expieryDate);
 
-    const authorizationUri: string = client.authorizationCode.authorizeURL(
+    const authorizationUri: string = client.authorizeURL(
         {
             redirect_uri: redirAuthorizeUrl.href,
             scope: scopes,
@@ -102,8 +102,10 @@ export async function ExtractAccessTokenFromPatreon(
 
     try
     {
-        const result: OAuth.Token = await client.authorizationCode.getToken(tokenConfig);
-        const accessToken: OAuth.AccessToken = client.accessToken.create(result);
+        const result: OAuth.Token = await client.getToken(tokenConfig);
+        const accessToken: PatreonTS.Types.PatreonToken =
+            PatreonTS.Types.CreatePatreonTokenFromOAuthToken(client.createToken(result));
+
         let ffrUserId: number = -1;
         if (activeRequestMap.has(stateVar))
         {
@@ -111,7 +113,7 @@ export async function ExtractAccessTokenFromPatreon(
             activeRequestMap.delete(stateVar);
             activeRequestExpirationMap.delete(stateVar);
 
-            await Specs.Link.WriteLinkData(accessToken, ffrUserId)
+            await Specs.Link.WriteLinkData(accessToken.accessToken, ffrUserId)
                 .then((result: Specs.Link.Result) =>
                 {
                     switch (result)
@@ -158,7 +160,7 @@ const DB_PATREON: string = process.env.DB_PATREON as string;
 const DB_PATREON_USER: string = process.env.DB_PATREON_USER as string;
 const DB_PATREON_PASS: string = process.env.DB_PATREON_PASS as string;
 
-const connectionOptions: ConnectionOptions =
+const connectionOptions: TypeORM.ConnectionOptions =
 {
     name: DB_PATREON,
     type: "mysql",
@@ -170,41 +172,55 @@ const connectionOptions: ConnectionOptions =
     entities: [Entities.PatreonLink]
 };
 
-if (Initialize(connectionOptions))
+async function Startup(): Promise<TypeORM.Connection>
 {
-    const PORT: number = 8081;
-    const server = app.listen(PORT, () =>
-    {
-        const port: AddressInfo = server.address() as AddressInfo;
-        console.log(`Listening on http://testing.flashflashrevolution.com:${port.port}`);
-    });
-
-    setInterval(() =>
-    {
-        const toRemove: string[] = [];
-        const timeNow: number = Date.now();
-        for (const expiery of activeRequestExpirationMap)
+    return await Initialize(connectionOptions)
+        .then((connection: TypeORM.Connection) =>
         {
-            if (expiery[1].valueOf() > timeNow)
+            const PORT: number = 8081;
+            const server = app.listen(PORT, () =>
             {
-                toRemove.push(expiery[0]);
-            }
-        }
+                const port: AddressInfo = server.address() as AddressInfo;
+                console.log(`Listening on http://testing.flashflashrevolution.com:${port.port}`);
+            });
 
-        if (toRemove.length > 0)
-        {
-            console.log(`${toRemove.length} link requests expired.`);
-        }
+            setInterval(() =>
+            {
+                const toRemove: string[] = [];
+                const timeNow: number = Date.now();
+                for (const expiery of activeRequestExpirationMap)
+                {
+                    if (expiery[1].valueOf() > timeNow)
+                    {
+                        toRemove.push(expiery[0]);
+                    }
+                }
 
-        for (const entry of toRemove)
+                if (toRemove.length > 0)
+                {
+                    console.log(`${toRemove.length} link requests expired.`);
+                }
+
+                for (const entry of toRemove)
+                {
+                    activeRequestMap.delete(entry);
+                    activeRequestExpirationMap.delete(entry);
+                }
+            },
+                300000);
+
+            return Promise.resolve(connection);
+        })
+        .catch(() =>
         {
-            activeRequestMap.delete(entry);
-            activeRequestExpirationMap.delete(entry);
-        }
-    },
-        300000);
+            return Promise.reject("Unable to connect to Database.");
+        });
 }
-else
-{
-    Process.exit(1);
-}
+
+
+Startup()
+    .catch((error: string) =>
+    {
+        console.log(error);
+        Process.exit(1);
+    });
