@@ -1,5 +1,7 @@
 FROM node:12
 
+LABEL org.opencontainers.image.source https://github.com/flashflashrevolution/service-patreon-linker
+
 # Create app directory
 WORKDIR /usr/src/app
 
