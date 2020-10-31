@@ -21,7 +21,7 @@
    },
    "homepage": "https://github.com/flashflashrevolution/access-token-linker#readme",
    "dependencies": {
-      "@flashflashrevolution/database-entities": "^0.5.0",
+      "@flashflashrevolution/database-entities": "^0.5.2",
       "cookie-parser": "^1.4.5",
       "dotenv": "^8.2.0",
       "express": "^4.17.1",
