@@ -113,7 +113,7 @@ export async function ExtractAccessTokenFromPatreon(
             activeRequestMap.delete(stateVar);
             activeRequestExpirationMap.delete(stateVar);
 
-            await Specs.Link.WriteLinkData(accessToken.accessToken, ffrUserId)
+            await Specs.Link.WriteLinkData(connection, accessToken.accessToken, ffrUserId)
                 .then((result: Specs.Link.Result) =>
                 {
                     switch (result)
@@ -217,8 +217,13 @@ async function Startup(): Promise<TypeORM.Connection>
         });
 }
 
+let connection: TypeORM.Connection;
 
 Startup()
+    .then((newConnection: TypeORM.Connection) =>
+    {
+        connection = newConnection;
+    })
     .catch((error: string) =>
     {
         console.log(error);
