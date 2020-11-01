@@ -23,3 +23,12 @@ docker build -t flashflashrevolution/node-web-app .
 ```bash
 npm run typeorm migration:run -- --connection patreon --config ormconfig.production
 ```
+
+## Building and Running in Docker for Testing
+
+```bash
+# Fill out your github access token here. (The one for NPM.)
+NPM_TOKEN=YOUR_ACCESS_TOKEN
+docker build -t ghcr.io/flashflashrevolution/service-patreon-linker:dev --build-arg NPM_TOKEN=${NPM_TOKEN} .
+docker container run --env-file .env 679d9a90b7f7 -p 8081:8081
+```

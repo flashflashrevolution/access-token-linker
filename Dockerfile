@@ -1,10 +1,13 @@
 FROM node:14-alpine AS build
+ARG NPM_TOKEN
 WORKDIR /usr/src/app
-COPY . /usr/src/app
+COPY .npmrc .npmrc
+COPY package*.json .
+RUN npm ci --only=production
+RUN rm -f .npmrc
 
-RUN npm config set @flashflashrevolution:registry https://npm.pkg.github.com/ \
-    npm install --production
-
+COPY dist dist
+COPY README.md README.md
 
 FROM node:14-alpine
 WORKDIR /usr/src/app
