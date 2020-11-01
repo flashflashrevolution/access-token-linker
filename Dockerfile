@@ -1,23 +1,15 @@
-FROM node:12
+FROM node:14-alpine AS build
+WORKDIR /usr/src/app
+COPY . /usr/src/app
 
-LABEL org.opencontainers.image.source https://github.com/flashflashrevolution/service-patreon-linker
+RUN npm config set @flashflashrevolution:registry https://npm.pkg.github.com/ \
+    npm ci --only=production
 
-# Create app directory
+
+FROM node:14-alpine
 WORKDIR /usr/src/app
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
-# where available (npm@5+)
-COPY package*.json ./
-
-RUN npm install
-
-# If you are building your code for production
-# RUN npm ci --only=production
-
-# Bundle app source
-COPY . .
-
+LABEL org.opencontainers.image.source https://github.com/flashflashrevolution/service-patreon-linker
 EXPOSE 8081
-
+COPY --from=build /usr/src/app /usr/src/app
 CMD [ "node", "dist/index.js" ]
