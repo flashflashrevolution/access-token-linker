@@ -13,6 +13,6 @@ FROM node:14-alpine
 WORKDIR /usr/src/app
 
 LABEL org.opencontainers.image.source https://github.com/flashflashrevolution/service-patreon-linker
-EXPOSE 8081
+EXPOSE 80
 COPY --from=build /usr/src/app /usr/src/app
 CMD [ "node", "dist/index.js" ]
