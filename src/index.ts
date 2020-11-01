@@ -22,8 +22,11 @@ const PATREON_AUTHORIZE_PATH: string = "/oauth2/authorize";
 const FFR_HOST: string = process.env.LINK_REDIR_HOST as string;
 const FFR_REDIR_PATH: string = process.env.LINK_REDIR_PATH as string;
 
+const internalRedirectPath: string = "/oauth/redirect";
+
 const redirAuthorizeUrl: Url.URL =
-    new Url.URL("/oauth/redirect", "http://testing.flashflashrevolution.com/patreon-linker");
+    new Url.URL(internalRedirectPath, "http://testing.flashflashrevolution.com/patreon-linker");
+
 
 const scopes: string = "identity campaigns identity.memberships campaigns.members";
 const activeRequestMap: Map<string, number> = new Map<string, number>();
@@ -133,7 +136,7 @@ export async function ExtractAccessTokenFromPatreon(
 const app: Express.Express = Express();
 
 // Incoming redirect from Patreon.
-app.get(redirAuthorizeUrl.pathname, ExtractAccessTokenFromPatreon);
+app.get(internalRedirectPath, ExtractAccessTokenFromPatreon);
 
 app.use(cookieParser());
 app.use(UserIdValidator.Middleware());
