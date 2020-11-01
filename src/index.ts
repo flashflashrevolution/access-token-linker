@@ -1,5 +1,4 @@
 import { ImportEnvironmentVariables } from "./Config";
-ImportEnvironmentVariables();
 
 import cookieParser = require('cookie-parser');
 import Express = require('express');
@@ -24,28 +23,16 @@ const FFR_HOST: string = process.env.LINK_REDIR_HOST as string;
 const FFR_REDIR_PATH: string = process.env.LINK_REDIR_PATH as string;
 
 const redirAuthorizeUrl: Url.URL =
-    new Url.URL("patreon-linker/oauth/redirect", "http://testing.flashflashrevolution.com");
+    new Url.URL("/oauth/redirect", "http://testing.flashflashrevolution.com/patreon-linker");
 
 const scopes: string = "identity campaigns identity.memberships campaigns.members";
-
 const activeRequestMap: Map<string, number> = new Map<string, number>();
 const activeRequestExpirationMap: Map<string, Date> = new Map<string, Date>();
 
-const credentials: OAuth.ModuleOptions = {
-    client:
-    {
-        id: process.env.PATREON_CLIENT_ID as string,
-        secret: process.env.PATREON_CLIENT_SECRET as string
-    },
-    auth:
-    {
-        tokenHost: PATREON_HOST,
-        tokenPath: PATREON_TOKEN_PATH,
-        authorizePath: PATREON_AUTHORIZE_PATH
-    }
-};
-
-const client: OAuth.AuthorizationCode<"patreon"> = new OAuth.AuthorizationCode(credentials);
+let connection: TypeORM.Connection;
+let credentials: OAuth.ModuleOptions;
+let client: OAuth.AuthorizationCode<"patreon">;
+let connectionOptions: TypeORM.ConnectionOptions;
 
 export function RequestAuthorizationFromPatreon(req: Express.Request, res: Express.Response): void
 {
@@ -75,6 +62,7 @@ export async function ExtractAccessTokenFromPatreon(
     res: Express.Response): Promise<void>
 {
     const redirToFFRUrlWithResult: Url.URL = new Url.URL(FFR_REDIR_PATH, FFR_HOST);
+    console.log(redirToFFRUrlWithResult);
 
     if (Object.keys(req.query).length <= 0)
     {
@@ -156,25 +144,10 @@ app.get("/", RequestAuthorizationFromPatreon);
 app.use(WebApp.HandlerError);
 app.use(WebApp.Handler404);
 
-const DB_HOST: string = process.env.DB_HOST as string;
-const DB_PATREON: string = process.env.DB_PATREON as string;
-const DB_PATREON_USER: string = process.env.DB_PATREON_USER as string;
-const DB_PATREON_PASS: string = process.env.DB_PATREON_PASS as string;
-
-const connectionOptions: TypeORM.ConnectionOptions =
-{
-    name: DB_PATREON,
-    type: "mysql",
-    host: DB_HOST,
-    port: 3306,
-    username: DB_PATREON_USER,
-    password: DB_PATREON_PASS,
-    database: DB_PATREON,
-    entities: [Entities.PatreonLink]
-};
-
 async function Startup(): Promise<TypeORM.Connection>
 {
+    await LoadConfiguration();
+
     return await Initialize(connectionOptions)
         .then((connection: TypeORM.Connection) =>
         {
@@ -218,7 +191,42 @@ async function Startup(): Promise<TypeORM.Connection>
         });
 }
 
-let connection: TypeORM.Connection;
+
+
+async function LoadConfiguration(): Promise<void>
+{
+    await ImportEnvironmentVariables();
+
+    // Patreon
+    credentials = {
+        client:
+        {
+            id: process.env.PATREON_CLIENT_ID as string,
+            secret: process.env.PATREON_CLIENT_SECRET as string
+        },
+        auth:
+        {
+            tokenHost: PATREON_HOST,
+            tokenPath: PATREON_TOKEN_PATH,
+            authorizePath: PATREON_AUTHORIZE_PATH
+        }
+    };
+
+    client = new OAuth.AuthorizationCode(credentials);
+
+    // TypeORM Database
+    connectionOptions = {
+        name: process.env.DB_PATREON,
+        type: "mysql",
+        host: process.env.DB_HOST as string,
+        port: 3306,
+        username: process.env.DB_PATREON_USER,
+        password: process.env.DB_PATREON_PASS,
+        database: process.env.DB_PATREON,
+        entities: [Entities.PatreonLink]
+    };
+}
+
 
 Startup()
     .then((newConnection: TypeORM.Connection) =>

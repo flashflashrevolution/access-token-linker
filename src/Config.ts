@@ -1,19 +1,15 @@
 import * as dotenv from 'dotenv';
-import fs from 'fs';
+import fs from 'fs/promises';
 
-const envPath = "./.env";
+const envPath = ".env";
 
-function loadEnv(err: NodeJS.ErrnoException | null): void
+async function ImportEnvironmentVariables(): Promise<void>
 {
-    if (err == null)
+    const exists = await fs.stat(envPath);
+    if (exists)
     {
-        dotenv.config({ path: "./.env" });
+        dotenv.config({ path: envPath });
     }
-}
-
-function ImportEnvironmentVariables(): void
-{
-    fs.stat(envPath, loadEnv);
 }
 
 export { ImportEnvironmentVariables };
