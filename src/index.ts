@@ -23,7 +23,7 @@ const PATREON_AUTHORIZE_PATH: string = "/oauth2/authorize";
 const FFR_HOST: string = process.env.LINK_REDIR_HOST as string;
 const FFR_REDIR_PATH: string = process.env.LINK_REDIR_PATH as string;
 
-const redirAuthorizeUrl: Url.URL = new Url.URL("/oauth/redirect", "http://testing.flashflashrevolution.com:8081");
+const redirAuthorizeUrl: Url.URL = new Url.URL("/oauth/redirect", "http://testing.flashflashrevolution.com");
 
 const scopes: string = "identity campaigns identity.memberships campaigns.members";
 
@@ -177,7 +177,7 @@ async function Startup(): Promise<TypeORM.Connection>
     return await Initialize(connectionOptions)
         .then((connection: TypeORM.Connection) =>
         {
-            const PORT: number = 8081;
+            const PORT: number = 80;
             const server = app.listen(PORT, () =>
             {
                 const port: AddressInfo = server.address() as AddressInfo;
