@@ -3,7 +3,7 @@ WORKDIR /usr/src/app
 COPY . /usr/src/app
 
 RUN npm config set @flashflashrevolution:registry https://npm.pkg.github.com/ \
-    npm ci --only=production
+    npm install --production
 
 
 FROM node:14-alpine
