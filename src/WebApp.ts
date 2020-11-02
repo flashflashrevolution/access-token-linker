@@ -23,7 +23,7 @@ function HandlerError(
     _next: Express.NextFunction): void
 {
     res.status(error.status || 500);
-    res.send({ error: error.message });
+    res.send({ error: error.message + ": " + _req.url });
 }
 
 function Handler404(
@@ -31,7 +31,7 @@ function Handler404(
     res: Express.Response): void
 {
     res.status(404);
-    res.send({ error: "Unsupported route." });
+    res.send({ error: `Unsupported route: ${_req.url}` });
 }
 
 export { HandlerError, Handler404, HttpException };
