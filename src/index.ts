@@ -16,18 +16,33 @@ import * as UserIdValidator from "./UserIdValidator";
 import * as WebApp from "./WebApp";
 import * as TypeORM from 'typeorm';
 
-const PATREON_HOST: string = "https://www.patreon.com";
-const PATREON_TOKEN_PATH: string = "/api/oauth2/token";
-const PATREON_AUTHORIZE_PATH: string = "/oauth2/authorize";
-const FFR_HOST: string = process.env.LINK_REDIR_HOST as string;
-const FFR_REDIR_PATH: string = process.env.LINK_REDIR_PATH as string;
-const FFR_SERVICES_HOST: string = process.env.FFR_SERVICES_HOST as string;
+interface PatreonConfiguration
+{
+    PATREON_HOST: string;
+    PATREON_TOKEN_PATH: string;
+    PATREON_AUTHORIZE_PATH: string;
+}
+
+const patreonConf: PatreonConfiguration =
+{
+    PATREON_HOST: "https://www.patreon.com",
+    PATREON_TOKEN_PATH: "/api/oauth2/token",
+    PATREON_AUTHORIZE_PATH: "/oauth2/authorize",
+}
+
+interface FFRConfiguration
+{
+    FFR_HOST: string;
+    FFR_REDIR_PATH: string;
+    FFR_SERVICES_HOST: string;
+}
+
+let ffrConf: FFRConfiguration;
 
 const internalRedirectPath: string = "/oauth/redirect";
 const externalRedirectPath: string = "patreon-linker" + internalRedirectPath;
 
-const redirAuthorizeUrl: Url.URL =
-    new Url.URL(externalRedirectPath, FFR_SERVICES_HOST);
+let redirAuthorizeUrl: Url.URL;
 
 const scopes: string = "identity campaigns identity.memberships campaigns.members";
 const activeRequestMap: Map<string, number> = new Map<string, number>();
@@ -69,7 +84,7 @@ export async function ExtractAccessTokenFromPatreon(
     req: Express.Request,
     res: Express.Response): Promise<void>
 {
-    const redirToFFRUrlWithResult: Url.URL = new Url.URL(FFR_REDIR_PATH, FFR_HOST);
+    const redirToFFRUrlWithResult: Url.URL = new Url.URL(ffrConf.FFR_REDIR_PATH, ffrConf.FFR_HOST);
     console.log(redirToFFRUrlWithResult);
 
     if (Object.keys(req.query).length <= 0)
@@ -214,9 +229,9 @@ async function LoadConfiguration(): Promise<void>
         },
         auth:
         {
-            tokenHost: PATREON_HOST,
-            tokenPath: PATREON_TOKEN_PATH,
-            authorizePath: PATREON_AUTHORIZE_PATH
+            tokenHost: patreonConf.PATREON_HOST,
+            tokenPath: patreonConf.PATREON_TOKEN_PATH,
+            authorizePath: patreonConf.PATREON_AUTHORIZE_PATH
         }
     };
 
@@ -233,6 +248,15 @@ async function LoadConfiguration(): Promise<void>
         database: process.env.DB_PATREON,
         entities: [Entities.PatreonLink]
     };
+
+    ffrConf =
+    {
+        FFR_HOST: process.env.LINK_REDIR_HOST as string,
+        FFR_REDIR_PATH: process.env.LINK_REDIR_PATH as string,
+        FFR_SERVICES_HOST: process.env.FFR_SERVICES_HOST as string,
+    }
+
+    redirAuthorizeUrl = new Url.URL(externalRedirectPath, ffrConf.FFR_SERVICES_HOST);
 }
 
 
