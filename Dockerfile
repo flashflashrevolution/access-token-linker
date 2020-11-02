@@ -1,7 +1,7 @@
 FROM node:14-alpine AS build
 ARG NPM_TOKEN
 WORKDIR /usr/src/app
-COPY .npmrc .npmrc
+COPY .npmrc.docker .npmrc
 COPY package*.json .
 RUN npm ci --only=production
 RUN rm -f .npmrc
