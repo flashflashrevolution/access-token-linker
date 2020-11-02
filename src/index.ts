@@ -25,7 +25,7 @@ const FFR_REDIR_PATH: string = process.env.LINK_REDIR_PATH as string;
 const internalRedirectPath: string = "/oauth/redirect";
 
 const redirAuthorizeUrl: Url.URL =
-    new Url.URL(internalRedirectPath, "http://testing.flashflashrevolution.com/patreon-linker");
+    new Url.URL(internalRedirectPath, "http://testing.flashflashrevolution.com/patreon-linker/");
 
 
 const scopes: string = "identity campaigns identity.memberships campaigns.members";
@@ -59,6 +59,7 @@ export function RequestAuthorizationFromPatreon(req: Express.Request, res: Expre
             state: state.toString(),
         });
 
+    console.log("Generated authorization uri:" + redirAuthorizeUrl.href);
     console.log("Redirecting to: " + authorizationUri);
     res.redirect(authorizationUri);
 }
