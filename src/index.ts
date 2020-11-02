@@ -21,7 +21,7 @@ const PATREON_TOKEN_PATH: string = "/api/oauth2/token";
 const PATREON_AUTHORIZE_PATH: string = "/oauth2/authorize";
 const FFR_HOST: string = process.env.LINK_REDIR_HOST as string;
 const FFR_REDIR_PATH: string = process.env.LINK_REDIR_PATH as string;
-const FFR_SERVICES_HOST: string = process.env.LINK_SERVICES_HOST as string;
+const FFR_SERVICES_HOST: string = process.env.FFR_SERVICES_HOST as string;
 
 const internalRedirectPath: string = "/oauth/redirect";
 const externalRedirectPath: string = "patreon-linker" + internalRedirectPath;
