@@ -39,6 +39,8 @@ let connectionOptions: TypeORM.ConnectionOptions;
 
 export function RequestAuthorizationFromPatreon(req: Express.Request, res: Express.Response): void
 {
+    console.log("Incoming: " + req.url);
+
     // Get userid from cookie. (If we got here, we know it exists.)
     const cookies: Cookies.Cookies = Cookies.GetCookies(req.cookies);
     const state: Guid = Guid.create();
@@ -57,6 +59,7 @@ export function RequestAuthorizationFromPatreon(req: Express.Request, res: Expre
             state: state.toString(),
         });
 
+    console.log("Redirecting to: " + authorizationUri);
     res.redirect(authorizationUri);
 }
 
