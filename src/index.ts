@@ -21,12 +21,13 @@ const PATREON_TOKEN_PATH: string = "/api/oauth2/token";
 const PATREON_AUTHORIZE_PATH: string = "/oauth2/authorize";
 const FFR_HOST: string = process.env.LINK_REDIR_HOST as string;
 const FFR_REDIR_PATH: string = process.env.LINK_REDIR_PATH as string;
+const FFR_SERVICES_HOST: string = process.env.LINK_SERVICES_HOST as string;
 
 const internalRedirectPath: string = "/oauth/redirect";
+const externalRedirectPath: string = "patreon-linker" + internalRedirectPath;
 
 const redirAuthorizeUrl: Url.URL =
-    new Url.URL(internalRedirectPath, "http://testing.flashflashrevolution.com/patreon-linker/");
-
+    new Url.URL(externalRedirectPath, FFR_SERVICES_HOST);
 
 const scopes: string = "identity campaigns identity.memberships campaigns.members";
 const activeRequestMap: Map<string, number> = new Map<string, number>();
