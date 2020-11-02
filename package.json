@@ -1,6 +1,6 @@
 {
    "name": "access-token-linker",
-   "version": "1.2.0",
+   "version": "1.3.0",
    "description": "Service which links FFR accounts to API access tokens.",
    "main": "dist/index.js",
    "types": "dist/index.d.ts",
