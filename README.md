@@ -2,6 +2,17 @@
 
 [![code style: eslint](https://img.shields.io/badge/code_style-eslint-8080F2.svg?style=flat-square)](https://github.com/eslint/eslint)
 
+- [Access Token Linker](#access-token-linker)
+  - [Chart](#chart)
+  - [Development Image Builds](#development-image-builds)
+  - [Generating Migrations](#generating-migrations)
+  - [Running Migrations](#running-migrations)
+  - [Building and Running in Docker for Testing](#building-and-running-in-docker-for-testing)
+
+## Chart
+
+The deployment chart for this project can be found in the [charts](https://github.com/flashflashrevolution/charts) repository.
+
 ## Development Image Builds
 
 ```bash
