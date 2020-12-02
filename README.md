@@ -15,8 +15,23 @@ The deployment chart for this project can be found in the [charts](https://githu
 
 ## Development Image Builds
 
-```bash
-docker build -t flashflashrevolution/node-web-app .
+```zsh
+# First get a github access token with registry read permissions.
+NPM_TOKEN=access_token
+
+# Get the sha of the latest commit you want to build from.
+git log --oneline
+
+# Then run the build. Uses multi-stage build, the access token wont be in the final image.
+docker build -t ghcr.io/flashflashrevolution/service-patreon-linker:sha-shavalue --build-arg NPM_TOKEN=${NPM_TOKEN} .
+
+# Push the built image.
+docker push ghcr.io/flashflashrevolution/service-patreon-linker:sha-shavalue
+
+# Here is an example of a functional sequence.
+# NPM_TOKEN=averyvalidtokenstring
+# docker build -t ghcr.io/flashflashrevolution/flashflashrevolution/service-patreon-linker:sha-cbcc9cd --build-arg NPM_TOKEN=${NPM_TOKEN} .
+# docker push ghcr.io/flashflashrevolution/service-patreon-linker:sha-cbcc9cd
 ```
 
 ## Generating Migrations
